@@ -249,20 +249,155 @@ GROUP BY
 	D.DIRECTOR_ID;
 
 --26. Lista nombre, nacionalidad y director de todas las películas
+SELECT 
+    M.MOVIE_NAME ,
+    N.NATIONALITY_NAME ,
+    D.DIRECTOR_NAME 
+FROM 
+    PUBLIC.MOVIES M
+JOIN 
+    PUBLIC.NATIONALITIES N ON M.NATIONALITY_ID = N.NATIONALITY_ID
+JOIN 
+    PUBLIC.DIRECTORS D ON M.DIRECTOR_ID = D.DIRECTOR_ID;
 
 --27. Muestra las películas con los actores que han participado en cada una de ellas
-
+SELECT 
+    M.MOVIE_NAME 
+    ,
+    STRING_AGG(A.ACTOR_NAME, ', ') AS "Actores"
+FROM 
+    PUBLIC.MOVIES M
+JOIN 
+    PUBLIC.MOVIES_ACTORS MA ON M.MOVIE_ID = MA.MOVIE_ID
+JOIN 
+    PUBLIC.ACTORS A ON MA.ACTOR_ID = A.ACTOR_ID
+GROUP BY 
+    M.MOVIE_NAME
+ORDER BY 
+    M.MOVIE_NAME;
 --28. Indica cual es el nombre del director del que más películas se han alquilado
-
+SELECT
+	MMR.MOVIE_ID,
+	D.DIRECTOR_NAME,
+	COUNT(*) AS num
+FROM
+	PUBLIC.MEMBERS_MOVIE_RENTAL MMR
+JOIN 
+    PUBLIC.MOVIES M ON
+	MMR.MOVIE_ID = M.MOVIE_ID
+JOIN 
+    PUBLIC.DIRECTORS D ON
+	M.DIRECTOR_ID = D.DIRECTOR_ID
+GROUP BY
+	MMR.MOVIE_ID,
+	D.DIRECTOR_NAME
+HAVING
+	COUNT(*) = (
+	SELECT
+		MAX(cnt)
+	FROM
+		(
+		SELECT
+			COUNT(*) AS cnt
+		FROM
+			PUBLIC.MEMBERS_MOVIE_RENTAL
+		GROUP BY
+			MOVIE_ID) AS counts)
 --29. Indica cuantos premios han ganado cada uno de los estudios con las películas que han creado
-
+SELECT
+	S.STUDIO_ID,
+	S.STUDIO_NAME,
+	COUNT(A.AWARD_ID) AS "PREMIOS"
+FROM
+	PUBLIC.STUDIOS S
+JOIN
+    PUBLIC.MOVIES M ON
+	S.STUDIO_ID = M.STUDIO_ID
+JOIN
+    PUBLIC.AWARDS A ON
+	M.MOVIE_ID = A.MOVIE_ID
+GROUP BY
+	S.STUDIO_ID,
+	S.STUDIO_NAME
+ORDER BY
+	S.STUDIO_ID;
 --30. Indica el número de premios a los que estuvo nominado un actor, pero que no ha conseguido (Si una película está nominada a un premio, su actor también lo está)
-
+SELECT
+	MA.ACTOR_ID,
+	A.ACTOR_NAME,
+	COUNT(DISTINCT AW.AWARD_ID) AS "Nominaciones"
+FROM
+	PUBLIC.MOVIES_ACTORS MA
+JOIN
+    PUBLIC.AWARDS AW ON
+	MA.MOVIE_ID = AW.MOVIE_ID
+JOIN
+    PUBLIC.ACTORS A ON
+	MA.ACTOR_ID = A.ACTOR_ID
+WHERE
+	AW.AWARD_WIN = 0
+GROUP BY
+	MA.ACTOR_ID,
+	A.ACTOR_NAME;
 --31. Indica cuantos actores y directores hicieron películas para los estudios no activos
+SELECT
+	S.STUDIO_NAME,
+	COUNT(DISTINCT MA.ACTOR_ID) AS "Cantidad de actores",
+	COUNT(DISTINCT M.DIRECTOR_ID) AS "Cantidad de directores"
+FROM
+	PUBLIC.MOVIES M
+JOIN
+    PUBLIC.STUDIOS S ON
+	M.STUDIO_ID = S.STUDIO_ID
+JOIN
+    PUBLIC.MOVIES_ACTORS MA ON
+	M.MOVIE_ID = MA.MOVIE_ID
+WHERE
+	S.STUDIO_ACTIVE = 0
+GROUP BY
+	S.STUDIO_NAME;
 
 --32. Indica el nombre, ciudad, y teléfono de todos los miembros del videoclub que hayan alquilado películas que hayan sido nominadas a más de 150 premios y ganaran menos de 50
-
+	SELECT
+	ME.MEMBER_NAME,
+	ME.MEMBER_TOWN,
+	ME.MEMBER_PHONE
+FROM
+	PUBLIC.MEMBERS ME
+JOIN 
+    PUBLIC.MEMBERS_MOVIE_RENTAL MR ON
+	ME.MEMBER_ID = MR.MEMBER_ID
+JOIN 
+    PUBLIC.MOVIES M ON
+	MR.MOVIE_ID = M.MOVIE_ID
+JOIN 
+    PUBLIC.AWARDS AW ON
+	M.MOVIE_ID = AW.MOVIE_ID
+WHERE
+	AW.AWARD_WIN < 50
+	AND AW.AWARD_NOMINATION > 150
 --33. Comprueba si hay errores en la BD entre las películas y directores (un director fallecido en el 76 no puede dirigir una película en el 88)
+SELECT
+	M.MOVIE_NAME,
+	M.MOVIE_LAUNCH_DATE,
+	M.DIRECTOR_ID,
+	D.DIRECTOR_NAME ,
+	D.DIRECTOR_DEAD_DATE
+FROM
+	PUBLIC.MOVIES M
+JOIN
+    PUBLIC.DIRECTORS D ON
+	M.DIRECTOR_ID = D.DIRECTOR_ID
+WHERE
+	YEAR(M.MOVIE_LAUNCH_DATE) > (
+	SELECT
+		YEAR(DIRECTOR_DEAD_DATE) AS AnoDefuncion
+	FROM
+		PUBLIC.DIRECTORS
+	WHERE
+		DIRECTOR_ID = M.DIRECTOR_ID
+		AND DIRECTOR_DEAD_DATE IS NOT NULL
+    );
 
 --34. Utilizando la información de la sentencia anterior, modifica la fecha de defunción a un año más tarde del estreno de la película (mediante sentencia SQL)
 
