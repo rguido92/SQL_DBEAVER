@@ -378,29 +378,37 @@ WHERE
 	AND AW.AWARD_NOMINATION > 150
 --33. Comprueba si hay errores en la BD entre las películas y directores (un director fallecido en el 76 no puede dirigir una película en el 88)
 SELECT
-	M.MOVIE_NAME,
-	M.MOVIE_LAUNCH_DATE,
-	M.DIRECTOR_ID,
-	D.DIRECTOR_NAME ,
-	D.DIRECTOR_DEAD_DATE
+    M.MOVIE_NAME,
+    M.MOVIE_LAUNCH_DATE,
+    M.DIRECTOR_ID,
+    D.DIRECTOR_NAME,
+    D.DIRECTOR_DEAD_DATE
 FROM
-	PUBLIC.MOVIES M
+    PUBLIC.MOVIES M
 JOIN
-    PUBLIC.DIRECTORS D ON
-	M.DIRECTOR_ID = D.DIRECTOR_ID
+    PUBLIC.DIRECTORS D ON M.DIRECTOR_ID = D.DIRECTOR_ID
 WHERE
-	YEAR(M.MOVIE_LAUNCH_DATE) > (
-	SELECT
-		YEAR(DIRECTOR_DEAD_DATE) AS AnoDefuncion
-	FROM
-		PUBLIC.DIRECTORS
-	WHERE
-		DIRECTOR_ID = M.DIRECTOR_ID
-		AND DIRECTOR_DEAD_DATE IS NOT NULL
-    );
+    YEAR(M.MOVIE_LAUNCH_DATE) > YEAR(D.DIRECTOR_DEAD_DATE)
+    AND D.DIRECTOR_DEAD_DATE IS NOT NULL;
 
 --34. Utilizando la información de la sentencia anterior, modifica la fecha de defunción a un año más tarde del estreno de la película (mediante sentencia SQL)
-
+UPDATE PUBLIC.DIRECTORS
+SET DIRECTOR_DEAD_DATE = DATEADD('YEAR', 1, (
+    SELECT M.MOVIE_LAUNCH_DATE FROM PUBLIC.MOVIES M WHERE M.DIRECTOR_ID = DIRECTORS.DIRECTOR_ID
+))
+WHERE DIRECTOR_ID IN (
+    SELECT
+        M.DIRECTOR_ID
+    FROM
+        PUBLIC.MOVIES M
+    JOIN
+        PUBLIC.DIRECTORS D ON M.DIRECTOR_ID = D.DIRECTOR_ID
+    WHERE
+        YEAR(M.MOVIE_LAUNCH_DATE) > YEAR(
+            (SELECT DIRECTOR_DEAD_DATE FROM PUBLIC.DIRECTORS WHERE DIRECTOR_ID = M.DIRECTOR_ID)
+        )
+        AND D.DIRECTOR_DEAD_DATE IS NOT NULL
+);
 --35. Indica cuál es el género favorito de cada uno de los directores cuando dirigen una película
 
 --36. Indica cuál es la nacionalidad favorita de cada uno de los estudios en la producción de las películas
