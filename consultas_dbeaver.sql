@@ -442,5 +442,39 @@ HAVING
             director_counts.DIRECTOR_NAME = d.DIRECTOR_NAME
     );
 --36. Indica cuál es la nacionalidad favorita de cada uno de los estudios en la producción de las películas
-
+SELECT 
+    S.STUDIO_NAME,
+    D.NATIONALITY_NAME AS NACIONALIDAD_FAV,
+	count(*)
+FROM 
+    PUBLIC.STUDIOS S
+JOIN 
+    PUBLIC.MOVIES M ON S.STUDIO_ID = M.STUDIO_ID
+JOIN 
+    PUBLIC.NATIONALITIES D ON M.NATIONALITY_ID = D.NATIONALITY_ID
+GROUP BY 
+    S.STUDIO_NAME,
+    D.NATIONALITY_NAME
+HAVING 
+    COUNT(*) = (
+        SELECT 
+            MAX(ncount)
+        FROM (
+            SELECT 
+                S.STUDIO_NAME,
+                D.NATIONALITY_NAME,
+                COUNT(*) AS ncount
+            FROM 
+                PUBLIC.STUDIOS S
+            JOIN 
+                PUBLIC.MOVIES M ON S.STUDIO_ID = M.STUDIO_ID
+            JOIN 
+                PUBLIC.NATIONALITIES D ON M.NATIONALITY_ID = D.NATIONALITY_ID
+            GROUP BY 
+                S.STUDIO_NAME,
+                D.NATIONALITY_NAME
+        ) AS contador_naciones
+        WHERE 
+            contador_naciones.STUDIO_NAME = S.STUDIO_NAME
+    );
 --37. Indica cuál fue la primera película que alquilaron los miembros del videoclub cuyos teléfonos tengan como último dígito el ID de alguna nacionalidad
