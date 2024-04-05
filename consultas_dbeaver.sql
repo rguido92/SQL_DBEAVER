@@ -410,7 +410,37 @@ WHERE DIRECTOR_ID IN (
         AND D.DIRECTOR_DEAD_DATE IS NOT NULL
 );
 --35. Indica cuál es el género favorito de cada uno de los directores cuando dirigen una película
-
+SELECT 
+    d.DIRECTOR_NAME,
+    g.GENRE_NAME AS FAVORITE_GENRE,
+    COUNT(*) AS C
+FROM 
+    PUBLIC.DIRECTORS d
+JOIN 
+    PUBLIC.MOVIES m ON d.DIRECTOR_ID = m.DIRECTOR_ID
+JOIN 
+    PUBLIC.GENRES g ON m.GENRE_ID = g.GENRE_ID
+GROUP BY 
+    d.DIRECTOR_NAME,
+    g.GENRE_NAME
+HAVING 
+    COUNT(*) = (
+        SELECT 
+            MAX(movie_count)
+        FROM (
+            SELECT 
+                d.DIRECTOR_NAME,
+                COUNT(*) AS movie_count
+            FROM 
+                PUBLIC.DIRECTORS d
+            JOIN 
+                PUBLIC.MOVIES m ON d.DIRECTOR_ID = m.DIRECTOR_ID
+            GROUP BY 
+                d.DIRECTOR_NAME
+        ) AS director_counts
+        WHERE 
+            director_counts.DIRECTOR_NAME = d.DIRECTOR_NAME
+    );
 --36. Indica cuál es la nacionalidad favorita de cada uno de los estudios en la producción de las películas
 
 --37. Indica cuál fue la primera película que alquilaron los miembros del videoclub cuyos teléfonos tengan como último dígito el ID de alguna nacionalidad
